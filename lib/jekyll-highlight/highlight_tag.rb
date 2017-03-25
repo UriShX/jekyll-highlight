@@ -8,11 +8,11 @@ module Jekyll
       # forms: name, name=value, or name="<quoted list>"
       #
       # <quoted list> is a space-separated list of numbers
-      SYNTAX = %r{/^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"))?)*)$/}
+      PARAM_SYNTAX = %r{/^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"))?)*)$/}
 
       def initialize(tag_name, markup, tokens)
         super
-        unless markup.strip =~ SYNTAX
+        unless markup.strip =~ PARAM_SYNTAX
           return raise SyntaxError, <<-eos
 Syntax Error in tag 'highlight' while parsing the following markup:
 
@@ -21,7 +21,6 @@ Syntax Error in tag 'highlight' while parsing the following markup:
 Valid syntax: highlight <lang> [linenos]
 eos
         end
-        # if markup.strip =~ SYNTAX
         @lang = Regexp.last_match(1).downcase
         @highlight_options = parse_options(Regexp.last_match(2))
       end
