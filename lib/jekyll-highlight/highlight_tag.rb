@@ -8,12 +8,15 @@ module Jekyll
       # forms: name, name=value, or name="<quoted list>"
       #
       # <quoted list> is a space-separated list of numbers
-      PARAM_SYNTAX = %r{/^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"))?)*)$/}
+      PARAM_SYNTAX = %r!^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"))?)*)$!
 
       def initialize(tag_name, markup, tokens)
         super
-        unless markup.strip =~ PARAM_SYNTAX
-          return raise SyntaxError, <<-eos
+        if markup.strip =~ PARAM_SYNTAX
+          @lang = Regexp.last_match(1).downcase
+          @highlight_options = parse_options(Regexp.last_match(2))
+        else
+          raise SyntaxError, <<-eos
 Syntax Error in tag 'highlight' while parsing the following markup:
 
   #{markup}
@@ -21,15 +24,12 @@ Syntax Error in tag 'highlight' while parsing the following markup:
 Valid syntax: highlight <lang> [linenos]
 eos
         end
-        @lang = Regexp.last_match(1).downcase
-        @highlight_options = parse_options(Regexp.last_match(2))
       end
 
-      # rubocop:disable Metrics/MethodLength,Metrics/AbcSize,Style/DoubleNegation
       def render(context)
         prefix = context["highlighter_prefix"] || ""
         suffix = context["highlighter_suffix"] || ""
-        code = super.to_s.gsub(%r{/\A(\n|\r)+|(\n|\r)+\z/}, "")
+        code = super.to_s.gsub(%r!\A(\n|\r)+|(\n|\r)+\z!, "")
 
         is_safe = !!context.registers[:site].safe
 
@@ -54,7 +54,7 @@ eos
             [:hl_lines,    opts.fetch(:hl_lines, nil)],
             [:linenos,     opts.fetch(:linenos, nil)],
             [:encoding,    opts.fetch(:encoding, "utf-8")],
-            [:cssclass,    opts.fetch(:cssclass, nil)]
+            [:cssclass,    opts.fetch(:cssclass, nil)],
           ].reject { |f| f.last.nil? }]
         else
           opts
@@ -63,12 +63,11 @@ eos
 
       private
 
-      # rubocop:disable Metrics/CyclomaticComplexity
       def parse_options(input)
         options = {}
         unless input.empty?
           # Split along 3 possible forms -- key="<quoted list>", key=value, or key
-          input.scan(%r{/(?:\w="[^"]*"|\w=\w|\w)+/}) do |opt|
+          input.scan(%r!(?:\w="[^"]*"|\w=\w|\w)+!) do |opt|
             key, value = opt.split("=")
             # If a quoted list, convert to array
             if value && value.include?("\"")
@@ -89,8 +88,8 @@ eos
 
         highlighted_code = Pygments.highlight(
           code,
-          lexer: @lang,
-          options: sanitized_opts(@highlight_options, is_safe)
+          :lexer   => @lang,
+          :options => sanitized_opts(@highlight_options, is_safe)
         )
 
         if highlighted_code.nil?
@@ -112,8 +111,8 @@ eos
       def render_rouge(code)
         Jekyll::External.require_with_graceful_fail("rouge")
         formatter = Rouge::Formatters::HTML.new(
-          line_numbers: @highlight_options[:linenos],
-          wrap: false
+          :line_numbers => @highlight_options[:linenos],
+          :wrap         => false
         )
         lexer = Rouge::Lexer.find_fancy(@lang, code) || Rouge::Lexers::PlainText
         formatter.format(lexer.lex(code))
@@ -125,8 +124,8 @@ eos
 
       def add_code_tag(code)
         code_attributes = [
-          "class=\"language-#{@lang.to_s.tr('+', '-')}\"",
-          "data-lang=\"#{@lang}\""
+          "class=\"language-#{@lang.to_s.tr("+", "-")}\"",
+          "data-lang=\"#{@lang}\"",
         ].join(" ")
         "<figure class=\"highlight\"><pre><code #{code_attributes}>"\
         "#{code.chomp}</code></pre></figure>"
