@@ -27,17 +27,17 @@ gems:
 
 ## Usage
 
-Configure the highlight in the YAML frontmatter of your article:
-
-```YAML
-highlight: Name of your highlight
-highlight_description: A concise description of your highlight. This should be included on every article.
-```
-
-Use the `highlight` tag in your Jekyll pages like this:
+Use the `highlight` block tag in your Jekyll pages like this:
 
 ```erb
-{% highlight %}
+{% highlight ruby %}
+def compute_thing(thing)
+  return unless thing[:foo]
+  update_with_bar(thing[:foo])
+  return re_compute(thing) unless thing[:foo][:bar]
+  partial_compute(thing)
+end
+{% endhighlight %}
 ```
 
 ## Development
