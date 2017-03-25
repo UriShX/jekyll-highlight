@@ -1,5 +1,6 @@
 module Jekyll
   module Tags
+    # rubocop:disable Metrics/ClassLength
     class HighlightBlock < Liquid::Block
       include Liquid::StandardFilters
 
@@ -8,7 +9,7 @@ module Jekyll
       # forms: name, name=value, or name="<quoted list>"
       #
       # <quoted list> is a space-separated list of numbers
-      PARAM_SYNTAX = /^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"))?)*)$/
+      PARAM_SYNTAX = /^([a-zA-Z0-9.+#_-]+)((\s+\w+(=(\w+|"([0-9]+\s)*[0-9]+"|"([^"]+)"))?)*)$/
 
       # rubocop:disable Style/GuardClause
       def initialize(tag_name, markup, tokens)
@@ -126,11 +127,12 @@ eos
       end
 
       def add_code_tag(code)
+        figcaption = "<figcaption>File: #{@highlight_options[:filename].join(' ')}</figcaption>" if @highlight_options.key?(:filename)
         code_attributes = [
           "class=\"language-#{@lang.to_s.tr('+', '-')}\"",
           "data-lang=\"#{@lang}\""
         ].join(" ")
-        "<figure class=\"highlight\"><pre><code #{code_attributes}>"\
+        "<figure class=\"highlight\">#{figcaption}<pre><code #{code_attributes}>"\
         "#{code.chomp}</code></pre></figure>"
       end
     end
